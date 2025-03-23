@@ -1,6 +1,7 @@
 import React from 'react';
 
-const EngineerDashboard = () => {
+const ClientDashboard = () => {
+  // Sample data
   const ideas = [
     {
       title: 'AI-based video recruitment and assessment tool',
@@ -121,5 +122,4 @@ const EngineerDashboard = () => {
   );
 };
 
-
-export default EngineerDashboard;
+export default ClientDashboard;

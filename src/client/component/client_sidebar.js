@@ -1,68 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation } from "react-router-dom";
+import { Home, Search, Briefcase, MessageSquare, FileText, Users, HelpCircle, LogOut } from "lucide-react";
+
+const mainMenuItems = [
+  { title: "Dashboard", path: "/client", icon: <Home size={20} /> },
+  { title: "Explore", path: "/client/explore", icon: <Search size={20} /> },
+  { title: "Vacancy", path: "/client/my-vacancy", icon: <Briefcase size={20} /> },
+  { title: "Messages", path: "/client/messages", icon: <MessageSquare size={20} /> },
+  { title: "Contracts", path: "/client/contracts", icon: <FileText size={20} /> },
+  { title: "Pals", path: "/client/pals", icon: <Users size={20} /> },
+];
 
 const ClientSidebar = () => {
-  const navigate = useNavigate();
-  const [userData, setUserData] = useState(null);
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || user.role !== 'client') {
-      navigate('/login');
-      return;
-    }
-    setUserData(user);
-  }, [navigate]);
-
-  const menuItems = [
-    { title: 'Dashboard', path: '/client/pages/client_dashboard' },
-    { title: 'Explore', path: '/client/pages/explore' },
-    { title: 'My Ideas', path: '/client/pages/my-ideas' },
-    { title: 'Messages', path: '/client/pages/messages' },
-    { title: 'Contracts', path: '/client/pages/contracts' },
-    { title: 'Pals', path: '/client/pages/pals' },
-    { title: 'Support', path: '/client/pages/support' }
-  ];
+  const location = useLocation();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   return (
-    <div className="h-screen w-64 bg-white shadow-lg p-6">
-      <h1 className="text-purple-700 text-2xl font-bold mb-8">EngiBridge</h1>
-      
-      {/* User Info */}
-      {/* {userData && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <p className="font-semibold">{userData.name}</p>
-          <p className="text-sm text-gray-600">{userData.G_mail}</p>
-          <p className="text-xs text-gray-500">ID: {userData.client_id}</p>
-        </div>
-      )} */}
-
-      <nav>
-        <ul className="space-y-4">
-          {menuItems.map((item, index) => (
-            <li 
-              key={index} 
-              className="p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
-              onClick={() => navigate(item.path)}
-            >
-              {item.title}
+    <aside className="fixed left-0 top-0 h-screen w-60 bg-gray-100 text-black p-4 shadow-lg flex flex-col justify-between">
+      <div>
+        <h1 className="text-purple-700 text-2xl font-bold mb-8">EngiBridge</h1>
+        <ul>
+          {mainMenuItems.map((item, index) => (
+            <li key={index} className="mb-2">
+              <Link 
+                to={item.path} 
+                className={`flex items-center gap-2 p-2 rounded transition-colors
+                  ${location.pathname === item.path 
+                    ? 'bg-gray-200 font-semibold' 
+                    : 'hover:bg-gray-300'
+                  }`}
+              >
+                {item.icon} {item.title}
+              </Link>
             </li>
           ))}
-          <li 
-            className="p-3 rounded-lg hover:bg-red-100 text-red-600 cursor-pointer"
-            onClick={handleLogout}
-          >
-            Logout
+        </ul>
+      </div>
+
+      <div className="mt-auto">
+        <ul>
+          <li className="mb-2">
+            <Link 
+              to="/client/support"
+              className={`flex items-center gap-2 p-2 rounded transition-colors
+                ${location.pathname === '/client/support'
+                  ? 'bg-gray-200 font-semibold' 
+                  : 'hover:bg-gray-300'
+                }`}
+            >
+              <HelpCircle size={20} /> Support
+            </Link>
+          </li>
+          <li>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 p-2 rounded transition-colors w-full hover:bg-gray-300 text-red-600"
+            >
+              <LogOut size={20} /> Logout
+            </button>
           </li>
         </ul>
-      </nav>
-    </div>
+      </div>
+    </aside>
   );
 };
 
