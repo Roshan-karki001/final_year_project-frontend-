@@ -17,6 +17,7 @@ import Contracts from './Engineer/pages/contracts';
 import Reviews from './Engineer/pages/reviews';
 import Profile from './Engineer/pages/profile';
 import Support from './Engineer/pages/support';
+import EditProfile from './Engineer/pages/editprofile';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
           <Route path="reviews" element={<Reviews />} />
           <Route path="profile" element={<Profile />} />
           <Route path="support" element={<Support />} />
+          <Route path="/engineer/profile/edit" element={<EditProfile />} />
         </Route>
 
         {/* Redirect unknown routes to login */}

@@ -1,37 +1,99 @@
-import { NavLink } from "react-router-dom";
-import { FaHome, FaProjectDiagram, FaEnvelope, FaFileContract, FaStar, FaUser, FaQuestionCircle, FaSignOutAlt } from "react-icons/fa";
+import { Link, useLocation } from "react-router-dom";
+import { Home, Briefcase, MessageSquare, FileText, Star, User, HelpCircle, LogOut } from "lucide-react";
+
+const mainMenuItems = [
+  { title: "Dashboard", path: "/engineer", icon: <Home size={20} /> },
+  { title: "Projects", path: "/engineer/projects", icon: <Briefcase size={20} /> },
+  { title: "Messages", path: "/engineer/messages", icon: <MessageSquare size={20} /> },
+  { title: "Contracts", path: "/engineer/contracts", icon: <FileText size={20} /> },
+  { title: "Reviews", path: "/engineer/reviews", icon: <Star size={20} /> },
+];
 
 const EngineerSidebar = () => {
+  const location = useLocation();
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   return (
-    <div className="h-full p-5">
-      <h1 className="text-2xl font-bold text-purple-700 mb-6">EngiBridge</h1>
-      <nav className="space-y-2">
-        <NavLink to="/engineer/dashboard" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaHome className="mr-3" /> Dashboard
-        </NavLink>
-        <NavLink to="/engineer/projects" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaProjectDiagram className="mr-3" /> Projects
-        </NavLink>
-        <NavLink to="/engineer/messages" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaEnvelope className="mr-3" /> Messages
-        </NavLink>
-        <NavLink to="/engineer/contracts" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaFileContract className="mr-3" /> Contracts
-        </NavLink>
-        <NavLink to="/engineer/reviews" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaStar className="mr-3" /> Reviews
-        </NavLink>
-        <NavLink to="/engineer/profile" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaUser className="mr-3" /> Profile
-        </NavLink>
-        <NavLink to="/engineer/support" className="flex items-center p-3 rounded-lg hover:bg-purple-100 transition">
-          <FaQuestionCircle className="mr-3" /> Support
-        </NavLink>
-        <NavLink to="/logout" className="flex items-center p-3 rounded-lg text-red-600 hover:bg-red-100 transition">
-          <FaSignOutAlt className="mr-3" /> Logout
-        </NavLink>
-      </nav>
-    </div>
+    <aside className="fixed left-0 top-0 h-screen w-60 bg-gray-100 text-black p-4 shadow-lg flex flex-col justify-between">
+      <div>
+        <h1 className="text-purple-700 text-2xl font-bold mb-4">EngiBridge</h1>
+        
+        {/* Profile Section */}
+        <Link 
+          to="/engineer/profile"
+          className="flex items-center gap-3 p-3 mb-6 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center">
+            {user.profileImage?.url ? (
+              <img 
+                src={user.profileImage.url || "https://zultimate.com/wp-content/uploads/2019/12/default-profile.png"}
+                alt="Profile" 
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <User size={20} className="text-purple-700" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{user.F_name} {user.L_name}</p>
+            <p className="text-xs text-gray-500 truncate">{user.G_mail}</p>
+          </div>
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </Link>
+
+        <ul>
+          {mainMenuItems.map((item, index) => (
+            <li key={index} className="mb-2">
+              <Link 
+                to={item.path} 
+                className={`flex items-center gap-2 p-2 rounded transition-colors
+                  ${location.pathname === item.path 
+                    ? 'bg-gray-200 font-semibold' 
+                    : 'hover:bg-gray-300'
+                  }`}
+              >
+                {item.icon} {item.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-auto">
+        <ul>
+          <li className="mb-2">
+            <Link 
+              to="/engineer/support"
+              className={`flex items-center gap-2 p-2 rounded transition-colors
+                ${location.pathname === '/engineer/support'
+                  ? 'bg-gray-200 font-semibold' 
+                  : 'hover:bg-gray-300'
+                }`}
+            >
+              <HelpCircle size={20} /> Support
+            </Link>
+          </li>
+          <li>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 p-2 rounded transition-colors w-full hover:bg-gray-300 text-red-600"
+            >
+              <LogOut size={20} /> Logout
+            </button>
+          </li>
+        </ul>
+      </div>
+    </aside>
   );
 };
 

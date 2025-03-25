@@ -2,7 +2,7 @@ import { React, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import ClientSidebar from "../component/client_sidebar";
 import ClientHeader from "../component/client_header";
-import ClientNav from "../component/client_nav";
+// Removed ClientNav import
 
 const ClientLayout = () => {
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ const ClientLayout = () => {
 
         {/* Page Content (Scrollable) */}
         <main className="p-6 mt-16 bg-white min-h-screen">
-          <ClientNav />
           <Outlet />
         </main>
       </div>
