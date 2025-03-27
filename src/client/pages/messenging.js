@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Info } from "lucide-react";
+import { Search, Send } from "lucide-react";
 import axios from 'axios';
-import io from 'socket.io-client';
-
-const socket = io('http://localhost:5000', {
-  withCredentials: true,
-  transports: ['websocket']
-});
 
 const Avatar = ({ name }) => (
   <div className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white font-bold rounded-full">
@@ -19,7 +13,6 @@ const Messaging = () => {
   const [newMessage, setNewMessage] = useState("");
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
   const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -36,18 +29,7 @@ const Messaging = () => {
         const response = await axios.get('http://localhost:5000/api/messages/conversations', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
-        // Fetch user details for each conversation partner
-        const conversationDetails = await Promise.all(
-          response.data.conversationPartners.map(async (partnerId) => {
-            const userResponse = await axios.get(`http://localhost:5000/api/auth/user/${partnerId}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            return userResponse.data.user;
-          })
-        );
-        
-        setConversations(conversationDetails);
+        setConversations(response.data.conversations);
       } catch (error) {
         console.error('Error fetching conversations:', error);
       }
@@ -55,41 +37,10 @@ const Messaging = () => {
     fetchConversations();
   }, [token]);
 
-  // Socket connection and event handlers
-  useEffect(() => {
-    if (currentUser?.id) {
-      socket.emit('userConnected', currentUser.id);
-
-      socket.on('newMessage', ({ message }) => {
-        if (selectedUser && 
-            (message.sender_id === selectedUser._id || 
-             message.receiver_id === selectedUser._id)) {
-          setMessages(prev => [...prev, message]);
-          scrollToBottom();
-        }
-      });
-
-      socket.on('userTyping', ({ sender_id }) => {
-        if (sender_id === selectedUser?._id) setIsTyping(true);
-      });
-
-      socket.on('userStoppedTyping', ({ sender_id }) => {
-        if (sender_id === selectedUser?._id) setIsTyping(false);
-      });
-
-      return () => {
-        socket.off('newMessage');
-        socket.off('userTyping');
-        socket.off('userStoppedTyping');
-      };
-    }
-  }, [currentUser, selectedUser]);
-
   // Fetch messages when user selected
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser || !currentUser) return;
-      
       try {
         const response = await axios.get(
           `http://localhost:5000/api/messages/${currentUser.id}/${selectedUser._id}`,
@@ -101,11 +52,9 @@ const Messaging = () => {
         console.error('Error fetching messages:', error);
       }
     };
-
     fetchMessages();
   }, [selectedUser, currentUser, token]);
 
-  // Handle message sending
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
@@ -119,47 +68,22 @@ const Messaging = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setMessages(prev => [...prev, response.data.data]);
       setNewMessage("");
-      socket.emit('stopTyping', {
-        sender_id: currentUser.id,
-        receiver_id: selectedUser._id
-      });
       scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  // Handle typing events
-  let typingTimeout = null;
-  const handleTyping = () => {
-    if (selectedUser) {
-      socket.emit('typing', {
-        sender_id: currentUser.id,
-        receiver_id: selectedUser._id
-      });
-
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        socket.emit('stopTyping', {
-          sender_id: currentUser.id,
-          receiver_id: selectedUser._id
-        });
-      }, 2000);
-    }
-  };
-
-  // Filter conversations based on search
   const filteredConversations = conversations.filter(conv => 
-    `${conv.F_name} ${conv.L_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    conv.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-[calc(100vh-64px)] bg-gray-100 pt-4">
       {/* Conversations Sidebar */}
-      <div className="w-1/4 bg-white border-r">
+      <div className="w-1/4 bg-white border-r rounded-l-lg mx-4">
         <div className="p-4">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -171,64 +95,57 @@ const Messaging = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            {filteredConversations.map((conv) => (
-              <div
-                key={conv._id}
-                onClick={() => setSelectedUser(conv)}
-                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer ${
-                  selectedUser?._id === conv._id ? 'bg-blue-50' : 'hover:bg-gray-50'
-                }`}
-              >
-                <Avatar name={conv.F_name} />
-                <div>
-                  <p className="font-medium">{`${conv.F_name} ${conv.L_name}`}</p>
-                  <p className="text-sm text-gray-500">{conv.role}</p>
+          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {filteredConversations
+              .filter(conv => conv.hasMessages)
+              .map((conv) => (
+                <div
+                  key={conv.userId}
+                  onClick={() => setSelectedUser({ _id: conv.userId, F_name: conv.name.split(' ')[0], L_name: conv.name.split(' ')[1] })}
+                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer ${
+                    selectedUser?._id === conv.userId ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <Avatar name={conv.name.split(' ')[0]} />
+                  <div>
+                    <p className="font-medium">{conv.name}</p>
+                    <p className="text-sm text-gray-500">{conv.lastMessage}</p>
+                  </div>
                 </div>
-              </div>
             ))}
           </div>
         </div>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white mr-4 rounded-r-lg">
         {selectedUser ? (
           <>
             {/* Chat Header */}
-            <div className="bg-white p-4 border-b flex items-center justify-between">
+            <div className="p-4 border-b flex items-center">
               <div className="flex items-center space-x-3">
                 <Avatar name={selectedUser.F_name} />
-                <div>
-                  <p className="font-medium">{`${selectedUser.F_name} ${selectedUser.L_name}`}</p>
-                  <p className="text-sm text-gray-500">
-                    {isTyping ? 'Typing...' : 'Online'}
-                  </p>
-                </div>
+                <p className="font-medium">{`${selectedUser.F_name} ${selectedUser.L_name}`}</p>
               </div>
-              <Info className="w-6 h-6 text-gray-500 cursor-pointer" />
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-280px)]">
               {messages.map((message) => (
                 <div
                   key={message._id}
                   className={`flex ${
-                    message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'
+                    message.senderId === currentUser.id ? 'justify-end' : 'justify-start'
                   }`}
                 >
                   <div
                     className={`max-w-[70%] p-3 rounded-lg ${
-                      message.sender_id === currentUser.id
+                      message.senderId === currentUser.id
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-200'
                     }`}
                   >
                     <p>{message.content}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -236,13 +153,12 @@ const Messaging = () => {
             </div>
 
             {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="bg-white p-4 border-t">
+            <form onSubmit={handleSendMessage} className="p-4 border-t">
               <div className="flex space-x-2">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={handleTyping}
                   placeholder="Type a message..."
                   className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

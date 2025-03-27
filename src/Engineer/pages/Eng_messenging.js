@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Info } from "lucide-react";
-import axios from 'axios';
-import io from 'socket.io-client';
-
-const socket = io('http://localhost:5000', {
-  withCredentials: true,
-  transports: ['websocket']
-});
+import { Search, Send } from "lucide-react";
+import axios from "axios";
 
 const Avatar = ({ name }) => (
   <div className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white font-bold rounded-full">
@@ -19,77 +13,32 @@ const Messaging = () => {
   const [newMessage, setNewMessage] = useState("");
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
-  const currentUser = JSON.parse(localStorage.getItem('user'));
-  const token = localStorage.getItem('token');
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Fetch conversations
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/messages/conversations', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get("http://localhost:5000/api/messages/conversations", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
-        // Fetch user details for each conversation partner
-        const conversationDetails = await Promise.all(
-          response.data.conversationPartners.map(async (partnerId) => {
-            const userResponse = await axios.get(`http://localhost:5000/api/auth/user/${partnerId}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            return userResponse.data.user;
-          })
-        );
-        
-        setConversations(conversationDetails);
+        setConversations(response.data.conversations);
       } catch (error) {
-        console.error('Error fetching conversations:', error);
+        console.error("Error fetching conversations:", error);
       }
     };
     fetchConversations();
   }, [token]);
 
-  // Socket connection and event handlers
-  useEffect(() => {
-    if (currentUser?.id) {
-      socket.emit('userConnected', currentUser.id);
-
-      socket.on('newMessage', ({ message }) => {
-        if (selectedUser && 
-            (message.sender_id === selectedUser._id || 
-             message.receiver_id === selectedUser._id)) {
-          setMessages(prev => [...prev, message]);
-          scrollToBottom();
-        }
-      });
-
-      socket.on('userTyping', ({ sender_id }) => {
-        if (sender_id === selectedUser?._id) setIsTyping(true);
-      });
-
-      socket.on('userStoppedTyping', ({ sender_id }) => {
-        if (sender_id === selectedUser?._id) setIsTyping(false);
-      });
-
-      return () => {
-        socket.off('newMessage');
-        socket.off('userTyping');
-        socket.off('userStoppedTyping');
-      };
-    }
-  }, [currentUser, selectedUser]);
-
-  // Fetch messages when user selected
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser || !currentUser) return;
-      
       try {
         const response = await axios.get(
           `http://localhost:5000/api/messages/${currentUser.id}/${selectedUser._id}`,
@@ -98,167 +47,106 @@ const Messaging = () => {
         setMessages(response.data.messages);
         scrollToBottom();
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        console.error("Error fetching messages:", error);
       }
     };
-
     fetchMessages();
   }, [selectedUser, currentUser, token]);
 
-  // Handle message sending
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/messages',
+        "http://localhost:5000/api/messages",
         {
-          receiver_id: selectedUser._id,
-          content: newMessage
+          receiverId: selectedUser._id,
+          content: newMessage,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setMessages(prev => [...prev, response.data.data]);
+      setMessages((prev) => [...prev, response.data.data]);
       setNewMessage("");
-      socket.emit('stopTyping', {
-        sender_id: currentUser.id,
-        receiver_id: selectedUser._id
-      });
       scrollToBottom();
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     }
   };
-
-  // Handle typing events
-  let typingTimeout = null;
-  const handleTyping = () => {
-    if (selectedUser) {
-      socket.emit('typing', {
-        sender_id: currentUser.id,
-        receiver_id: selectedUser._id
-      });
-
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        socket.emit('stopTyping', {
-          sender_id: currentUser.id,
-          receiver_id: selectedUser._id
-        });
-      }, 2000);
-    }
-  };
-
-  // Filter conversations based on search
-  const filteredConversations = conversations.filter(conv => 
-    `${conv.F_name} ${conv.L_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Conversations Sidebar */}
-      <div className="w-1/4 bg-white border-r">
-        <div className="p-4">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            {filteredConversations.map((conv) => (
-              <div
-                key={conv._id}
-                onClick={() => setSelectedUser(conv)}
-                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer ${
-                  selectedUser?._id === conv._id ? 'bg-blue-50' : 'hover:bg-gray-50'
-                }`}
-              >
-                <Avatar name={conv.F_name} />
-                <div>
-                  <p className="font-medium">{`${conv.F_name} ${conv.L_name}`}</p>
-                  <p className="text-sm text-gray-500">{conv.role}</p>
-                </div>
+    <div className="flex h-[calc(100vh-64px)] bg-gray-100 p-4">
+      {/* Sidebar - Conversations List */}
+      <div className="w-1/4 bg-white border-r rounded-lg shadow-lg p-4">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
+          {conversations.map((conv) => (
+            <div
+              key={conv.userId}
+              onClick={() => setSelectedUser({ _id: conv.userId, name: conv.name })}
+              className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer ${
+                selectedUser?._id === conv.userId ? "bg-blue-50" : "hover:bg-gray-50"
+              }`}
+            >
+              <Avatar name={conv.name} />
+              <div>
+                <p className="font-medium">{conv.name}</p>
+                <p className="text-sm text-gray-500">{conv.lastMessage}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Chat Section */}
+      <div className="flex-1 flex flex-col bg-white rounded-lg shadow-lg">
         {selectedUser ? (
           <>
-            {/* Chat Header */}
-            <div className="bg-white p-4 border-b flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Avatar name={selectedUser.F_name} />
-                <div>
-                  <p className="font-medium">{`${selectedUser.F_name} ${selectedUser.L_name}`}</p>
-                  <p className="text-sm text-gray-500">
-                    {isTyping ? 'Typing...' : 'Online'}
-                  </p>
-                </div>
-              </div>
-              <Info className="w-6 h-6 text-gray-500 cursor-pointer" />
+            <div className="p-4 border-b flex items-center space-x-3">
+              <Avatar name={selectedUser.name} />
+              <p className="font-medium">{selectedUser.name}</p>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message._id}
-                  className={`flex ${
-                    message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[70%] p-3 rounded-lg ${
-                      message.sender_id === currentUser.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200'
-                    }`}
-                  >
-                    <p>{message.content}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </p>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-280px)]">
+              {messages.map((message) => {
+                const isSentByUser = message.senderId === currentUser.id;
+                return (
+                  <div key={message._id} className={`flex w-full ${isSentByUser ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex ${isSentByUser ? "flex-row-reverse" : "flex-row"} items-end gap-2 max-w-[70%]`}>
+                      <Avatar name={isSentByUser ? currentUser.name : selectedUser.name} />
+                      <div className={`p-3 rounded-lg shadow-md ${isSentByUser ? "bg-blue-500 text-white rounded-br-none" : "bg-gray-100 text-gray-800 rounded-bl-none"}`}>
+                        <p className="break-words">{message.content}</p>
+                        <span className={`text-xs block mt-1 ${isSentByUser ? "text-blue-100" : "text-gray-500"}`}>
+                          {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="bg-white p-4 border-t">
+            <form onSubmit={handleSendMessage} className="p-4 border-t">
               <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={handleTyping}
-                  placeholder="Type a message..."
-                  className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
-                >
+                <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                <button type="submit" className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600">
                   <Send className="w-5 h-5" />
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a conversation to start messaging
-          </div>
+          <div className="flex-1 flex items-center justify-center text-gray-500">Select a conversation to start messaging</div>
         )}
       </div>
     </div>

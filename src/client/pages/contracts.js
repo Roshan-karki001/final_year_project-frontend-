@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Contracts = () => {
+  const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
@@ -73,7 +75,7 @@ const Contracts = () => {
           <div key={contract._id} className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-semibold mb-2">{contract.projectId.title}</h3>
+                <h3 className="text-xl font-semibold mb-2">{contract.title}</h3>
                 <p className="text-gray-600">
                   Client: {contract.userId.F_name} {contract.userId.L_name}
                 </p>
@@ -83,29 +85,32 @@ const Contracts = () => {
               </span>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="grid md:grid-cols-3 gap-4 mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Start Date</p>
-                <p>{new Date(contract.startDate).toLocaleDateString()}</p>
+                <p className="text-sm font-medium text-gray-600">Land Area</p>
+                <p>{contract.landArea} sq ft</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">End Date</p>
-                <p>{new Date(contract.endDate).toLocaleDateString()}</p>
+                <p className="text-sm font-medium text-gray-600">Building Type</p>
+                <p className="capitalize">{contract.buildingType}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Timeline</p>
+                <p>{contract.timeline}</p>
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Contract Details</h4>
-              <p className="text-gray-600 mb-2">{contract.description}</p>
               <div className="flex justify-between items-center">
                 <span className="font-medium text-purple-600">
                   Budget: ${contract.budget.toLocaleString()}
                 </span>
+                // Update the View Contract button in the return statement
                 <button
-                  onClick={() => window.open(contract.documentUrl, '_blank')}
+                  onClick={() => navigate(`/client/contracts/${contract._id}`)}
                   className="px-4 py-2 text-purple-600 border border-purple-600 rounded-md hover:bg-purple-50"
                 >
-                  View Document
+                  View Contract
                 </button>
               </div>
             </div>

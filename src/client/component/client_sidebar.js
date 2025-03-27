@@ -4,9 +4,10 @@ import { Home, Search, Briefcase, MessageSquare, FileText, User, HelpCircle, Log
 const mainMenuItems = [
   { title: "Dashboard", path: "/client", icon: <Home size={20} /> },
   { title: "Explore", path: "/client/explore", icon: <Search size={20} /> },
+  { title: "Find Engineers", path: "/client/search-engineers", icon: <User size={20} /> },  // Updated
   { title: "Vacancy", path: "/client/my-vacancy", icon: <Briefcase size={20} /> },
   { title: "Messages", path: "/client/messages", icon: <MessageSquare size={20} /> },
-  { title: "Contracts", path: "/client/contracts", icon: <FileText size={20} /> }, 
+  { title: "Contracts", path: "/client/contracts", icon: <FileText size={20} /> } 
 ];
 
 const ClientSidebar = () => {

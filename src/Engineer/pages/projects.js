@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Add this import
 
 const Projects = () => {
+    const navigate = useNavigate(); // Add this hook
     const [projects, setProjects] = useState([]);
     const [filters, setFilters] = useState({
         minBudget: '',
@@ -10,10 +12,6 @@ const Projects = () => {
         timeline: ''
     });
     const token = localStorage.getItem('token');
-
-    useEffect(() => {
-        fetchProjects();
-    }, []);
 
     const fetchProjects = async () => {
         try {
@@ -27,6 +25,10 @@ const Projects = () => {
         }
     };
 
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]); // Add fetchProjects to the dependency array
+
     const handleFilterChange = (e) => {
         setFilters({
             ...filters,
@@ -37,6 +39,30 @@ const Projects = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         fetchProjects();
+    };
+
+    const handleViewDetails = (projectId) => {
+        navigate(`/engineer/project/${projectId}`);
+    };
+
+    const handleApplyForProject = async (projectId) => {
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/projects/${projectId}/apply`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            if (response.data.success) {
+                alert('Successfully applied to project!');
+                fetchProjects(); // Refresh the projects list
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error applying to project');
+            console.error('Error applying to project:', error);
+        }
     };
 
     return (
@@ -132,12 +158,20 @@ const Projects = () => {
                                     {new Date(project.timeline).toLocaleDateString()}
                                 </p>
                             </div>
-                            <button
-                                className="mt-4 w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
-                                onClick={() => {/* Add your logic for applying to project */}}
-                            >
-                                Apply for Project
-                            </button>
+                            <div className="flex gap-2 mt-4">
+                                <button
+                                    className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                                    onClick={() => handleApplyForProject(project._id)}
+                                >
+                                    Apply for project
+                                </button>
+                                <button
+                                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                                    onClick={() => handleViewDetails(project._id)}
+                                >
+                                    View Details
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}

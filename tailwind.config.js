@@ -304,6 +304,7 @@ module.exports = {
     },
     fontFamily: {
       sans: [
+        'InterTight',
         'ui-sans-serif',
         'system-ui',
         'sans-serif',

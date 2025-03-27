@@ -4,6 +4,7 @@ import ExplorePage from '../pages/explore';
 import Messaging from '../pages/messenging';
 import MyVacancy from '../pages/MyVacancy';
 import ClientDashboard from '../pages/ClientDashboard';
+import Contracts from '../pages/contracts';  // Add this import
 
 const ClientContainer = () => {
   const location = useLocation();
@@ -21,14 +22,7 @@ const ClientContainer = () => {
       case '/client/messages':
         return <Messaging />;
       case '/client/contracts':
-        return (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold mb-6">Contracts</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Contract cards will go here */}
-            </div>
-          </div>
-        );
+        return <Contracts />;  // Replace the placeholder with actual component
       case '/client/pals':
         return (
           <div className="p-8">
