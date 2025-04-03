@@ -11,8 +11,14 @@ const SearchEngineer = () => {
 
     useEffect(() => {
         const fetchEngineers = async () => {
+            if (!token) {
+                setError('Authentication required');
+                setLoading(false);
+                return;
+            }
+            
             try {
-                const response = await axios.get('http://localhost:5000/api/users/engineers', {
+                const response = await axios.get('http://localhost:5000/api/auth/engineers', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setEngineers(response.data.engineers);
@@ -24,7 +30,7 @@ const SearchEngineer = () => {
         };
 
         fetchEngineers();
-    }, []);
+    }, [token]);
 
     const handleViewProfile = (engineerId) => {
         navigate(`/engineer-profile/${engineerId}`);
@@ -52,13 +58,21 @@ const SearchEngineer = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {engineers.map((engineer) => (
-                    <div key={engineer._id} className="bg-white rounded-lg shadow-md p-6">
+                    <div key={engineer.id || engineer._id} className="bg-white rounded-lg shadow-md p-6">
                         <div className="flex items-center mb-4">
-                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                <span className="text-xl font-semibold text-purple-600">
-                                    {engineer.F_name[0]}
-                                </span>
-                            </div>
+                            {engineer.profileImage?.url ? (
+                                <img 
+                                    src={engineer.profileImage.url} 
+                                    alt={`${engineer.F_name}'s profile`}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <span className="text-xl font-semibold text-purple-600">
+                                        {engineer.F_name[0]}
+                                    </span>
+                                </div>
+                            )}
                             <div className="ml-4">
                                 <h3 className="font-semibold text-lg">
                                     {engineer.F_name} {engineer.L_name}
@@ -72,14 +86,25 @@ const SearchEngineer = () => {
                                 <div>
                                     <p className="text-sm text-gray-500">Skills</p>
                                     <div className="flex flex-wrap gap-2 mt-1">
-                                        {engineer.skills.split(',').map((skill, index) => (
-                                            <span 
-                                                key={index}
-                                                className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs"
-                                            >
-                                                {skill.trim()}
-                                            </span>
-                                        ))}
+                                        {Array.isArray(engineer.skills) ? (
+                                            engineer.skills.map((skill, index) => (
+                                                <span 
+                                                    key={`${engineer._id}-skill-${index}`}
+                                                    className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs"
+                                                >
+                                                    {skill}
+                                                </span>
+                                            ))
+                                        ) : typeof engineer.skills === 'string' ? (
+                                            engineer.skills.split(',').map((skill, index) => (
+                                                <span 
+                                                    key={`${engineer._id}-skill-${index}`}
+                                                    className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs"
+                                                >
+                                                    {skill.trim()}
+                                                </span>
+                                            ))
+                                        ) : null}
                                     </div>
                                 </div>
                             )}
@@ -87,7 +112,7 @@ const SearchEngineer = () => {
                             {engineer.experience && (
                                 <div>
                                     <p className="text-sm text-gray-500">Experience</p>
-                                    <p className="text-sm">{engineer.experience} years</p>
+                                    <p className="text-sm">{engineer.experience}</p>
                                 </div>
                             )}
                         </div>

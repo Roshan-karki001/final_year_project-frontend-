@@ -18,7 +18,9 @@ const ExplorePage = () => {
         : status === 'pending'
         ? 'active'
         : 'all';
-
+      
+      console.log('Fetching from endpoint:', `http://localhost:5000/api/projects/${endpoint}`);
+      
       const response = await fetch(`http://localhost:5000/api/projects/${endpoint}`, {
         method: 'GET',
         headers: {
@@ -29,6 +31,8 @@ const ExplorePage = () => {
       });
       
       const data = await response.json();
+      console.log('Response data:', data);
+      
       if (data.success) {
         setProjects(data.projects);
       } else {

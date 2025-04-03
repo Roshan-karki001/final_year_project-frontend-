@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MapPin, Mail, Phone, Calendar, DollarSign, Home, Clock } from 'lucide-react';
+import { MapPin, Mail, Calendar, DollarSign, Home, Clock } from 'lucide-react';
 
 const ProjectView = () => {
+    const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { id } = useParams();
+
+    const handleViewProfile = (userId) => {
+        navigate(`/engineer/view-profile/${userId}`);
+    };
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -16,7 +21,12 @@ const ProjectView = () => {
                 const response = await axios.get(`http://localhost:5000/api/projects/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setProject(response.data.project);
+                
+                if (response.data.success) {
+                    setProject(response.data.project);
+                } else {
+                    setError('Failed to fetch project details');
+                }
                 setLoading(false);
             } catch (err) {
                 setError(err.response?.data?.message || 'Error fetching project details');
@@ -24,7 +34,9 @@ const ProjectView = () => {
             }
         };
 
-        fetchProject();
+        if (id) {
+            fetchProject();
+        }
     }, [id]);
 
     if (loading) {
@@ -109,32 +121,20 @@ const ProjectView = () => {
                     <h2 className="text-xl font-semibold mb-4">Client Information</h2>
                     <div className="space-y-4">
                         <div className="mb-4">
-                            <h3 className="font-medium text-gray-800">{project.client.name}</h3>
+                            <h3 className="font-medium text-gray-800">{project.userId.F_name} {project.userId.L_name}</h3>
+                            <button
+                                onClick={() => handleViewProfile(project.userId._id)}
+                                className="mt-2 text-purple-600 hover:text-purple-800"
+                            >
+                                View Profile
+                            </button>
                         </div>
                         <div className="flex items-center">
                             <Mail className="w-5 h-5 text-gray-500 mr-3" />
                             <div>
                                 <p className="text-sm text-gray-500">Email</p>
-                                <p className="font-medium">{project.client.email}</p>
+                                <p className="font-medium">{project.userId.G_mail}</p>
                             </div>
-                        </div>
-                        <div className="flex items-center">
-                            <Phone className="w-5 h-5 text-gray-500 mr-3" />
-                            <div>
-                                <p className="text-sm text-gray-500">Phone</p>
-                                <p className="font-medium">{project.client.phone}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center">
-                            <MapPin className="w-5 h-5 text-gray-500 mr-3" />
-                            <div>
-                                <p className="text-sm text-gray-500">Location</p>
-                                <p className="font-medium">{project.client.location}</p>
-                            </div>
-                        </div>
-                        <div className="mt-4">
-                            <p className="text-sm text-gray-500 mb-2">Bio</p>
-                            <p className="text-gray-700">{project.client.bio}</p>
                         </div>
                     </div>
                 </div>
@@ -145,6 +145,9 @@ const ProjectView = () => {
                 
                 <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
                     Contact Client
+                </button>
+                <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
+                    Apply for project
                 </button>
             </div>
         </div>

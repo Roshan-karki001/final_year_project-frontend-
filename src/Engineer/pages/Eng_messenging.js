@@ -59,18 +59,18 @@ const Messaging = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/messages",
+        'http://localhost:5000/api/messages',
         {
-          receiverId: selectedUser._id,
-          content: newMessage,
+          receiver_id: selectedUser._id,
+          content: newMessage
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessages((prev) => [...prev, response.data.data]);
+      setMessages(prev => [...prev, response.data.data]);
       setNewMessage("");
       scrollToBottom();
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
     }
   };
 

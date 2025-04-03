@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Mail, Phone, Briefcase, MapPin } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { MapPin, Mail, Phone, Briefcase } from 'lucide-react';
 
 const ViewProfile = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get the ID from URL params
   const [profile, setProfile] = useState(null);
 
   const fetchProfile = useCallback(async () => {
@@ -14,7 +15,8 @@ const ViewProfile = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/projects/:id', {
+      // Update the URL to use the ID parameter
+      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -35,7 +37,7 @@ const ViewProfile = () => {
         navigate('/login');
       }
     }
-  }, [navigate]);
+  }, [navigate, id]); // Add id to dependency array
 
   useEffect(() => {
     fetchProfile();

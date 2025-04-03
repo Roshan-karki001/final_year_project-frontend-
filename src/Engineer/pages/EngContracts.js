@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-const Contracts = () => {
+const EngContracts = () => {
+  const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     fetchContracts();
-  }, []);
+  }, [token, navigate]);
 
   const fetchContracts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/contracts', {
+      // Get engineer ID from token
+      const engineerId = JSON.parse(atob(token.split('.')[1])).id;
+      const response = await axios.get(`http://localhost:5000/api/contracts/engineer/${engineerId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setContracts(response.data.contracts);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching contracts:', error);
+      console.error('Error response:', error.response?.data);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
       setLoading(false);
     }
   };
@@ -139,4 +151,4 @@ const Contracts = () => {
   );
 };
 
-export default Contracts;
+export default EngContracts;
