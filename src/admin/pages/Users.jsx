@@ -1,84 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, message } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Space, message } from 'antd';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 const Users = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    // Remove unused state
+    // const [selectedRole, setSelectedRole] = useState('all');
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
-            const response = await axios.get('/api/admin/users/list', {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
-            setUsers(response.data.users);
+            
+            // Ensure blockuser is properly initialized
+            const usersData = (response.data.users || []).map(user => ({
+                ...user,
+                blockuser: Boolean(user.blockuser) // Force boolean conversion
+            }));
+            
+            setUsers([...usersData]);
         } catch (error) {
-            message.error('Failed to fetch users');
+            message.error('Failed to fetch users: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
 
-    const handleUserAction = async (userId, action) => {
+    const handleBlockStatusChange = async (userId, currentStatus) => {
         try {
-            await axios.post('/api/admin/users/manage', 
-                { userId, action },
+            await axios.post(`${API_BASE_URL}/api/admin/block_unblock_user/${userId}`, 
+                null,
                 { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
             );
-            message.success('User updated successfully');
-            fetchUsers();
+            
+            // Force immediate UI update
+            setUsers(prevUsers => 
+                prevUsers.map(user => 
+                    user._id === userId 
+                        ? { ...user, blockuser: !Boolean(currentStatus) } 
+                        : user
+                )
+            );
+            
+            // Then fetch fresh data
+            const updatedResponse = await axios.get(`${API_BASE_URL}/api/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            setUsers(updatedResponse.data.users || []);
+            
         } catch (error) {
-            message.error('Failed to update user');
+            message.error('Failed to update user status: ' + (error.response?.data?.message || error.message));
         }
     };
 
     const columns = [
         {
             title: 'Name',
-            dataIndex: 'F_name',
+            dataIndex: ['F_name', 'L_name'],
             key: 'name',
-            render: (text, record) => `${record.F_name} ${record.L_name}`
+            render: (_, record) => `${record.F_name} ${record.L_name}`,
+            filterSearch: true,
+            filters: [...new Set(users.map(user => `${user.F_name} ${user.L_name}`))].map(name => ({
+                text: name,
+                value: name
+            })),
+            onFilter: (value, record) => `${record.F_name} ${record.L_name}` === value
         },
         {
             title: 'Email',
             dataIndex: 'G_mail',
-            key: 'email'
+            key: 'email',
+            filterSearch: true,
+            filters: [...new Set(users.map(user => user.G_mail))].map(email => ({
+                text: email,
+                value: email
+            })),
+            onFilter: (value, record) => record.G_mail === value
         },
         {
             title: 'Role',
             dataIndex: 'role',
-            key: 'role'
+            key: 'role',
+            filters: [
+                { text: 'Client', value: 'client' },
+                { text: 'Engineer', value: 'engineer' }
+            ],
+            onFilter: (value, record) => record.role.toLowerCase() === value
         },
         {
             title: 'Status',
-            dataIndex: 'isActive',
+            dataIndex: 'blockuser',
             key: 'status',
-            render: (isActive) => isActive ? 'Active' : 'Inactive'
+            render: (blockuser) => blockuser === undefined ? 'Active' : (blockuser ? 'Inactive' : 'Active')
         },
         {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => (
-                <Space>
+                <Space key={`actions-${record._id}`}>
                     <Button
-                        type={record.isActive ? 'danger' : 'primary'}
-                        onClick={() => handleUserAction(record._id, record.isActive ? 'deactivate' : 'activate')}
+                        type="primary"
+                        onClick={() => {
+                            const userId = record._id || record.id;
+                            if (userId) {
+                                navigate(`/admin/view-profile/${userId}`);
+                            } else {
+                                message.error('User ID not found in record');
+                                console.log('Full record structure:', record);
+                            }
+                        }}
                     >
-                        {record.isActive ? 'Deactivate' : 'Activate'}
+                        View Profile
                     </Button>
                     <Button
-                        onClick={() => handleUserAction(record._id, 'changeRole')}
+                        type={record.blockuser ? "danger" : "primary"}
+                        style={record.blockuser
+                            ? { backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }
+                            : { backgroundColor: '#52c41a', borderColor: '#52c41a' }
+                        }
+                        onClick={() => {
+                            console.log('Current blockuser status:', record.blockuser);
+                            
+                            const confirmMessage = record.blockuser
+                                ? 'Are you sure you want to unblock this user?'
+                                : 'Are you sure you want to block this user?';
+
+                            if (window.confirm(confirmMessage)) {
+                                handleBlockStatusChange(record._id || record.id, record.blockuser);
+                            }
+                        }}
                     >
-                        Change Role
+                        {record.blockuser ? 'Unblock' : 'Block'}
                     </Button>
                 </Space>
             )
         }
     ];
+
+    // Remove unused filteredUsers constant
+    // const filteredUsers = users.filter(user => {
+    //     if (selectedRole === 'all') return true;
+    //     return user.role.toLowerCase() === selectedRole.toLowerCase();
+    // });
 
     return (
         <div>
@@ -88,6 +168,7 @@ const Users = () => {
                 columns={columns}
                 dataSource={users}
                 rowKey="_id"
+                pagination={{ pageSize: 10 }}
             />
         </div>
     );

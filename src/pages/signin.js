@@ -4,7 +4,16 @@ import axios from "axios";
 
 const RegisterPage = () => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({ role: "", F_name: "", L_name: "", G_mail: "", Phonenumber: "", password: "", skills: "", experience: "" });
+  // First update the initial state to remove engineer-specific fields
+  const [formData, setFormData] = useState({ 
+    role: "", 
+    F_name: "", 
+    L_name: "", 
+    G_mail: "", 
+    Phonenumber: "",
+    location: "", 
+    password: "" 
+  });
   const [profileImage, setProfileImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const navigate = useNavigate();
@@ -23,8 +32,16 @@ const RegisterPage = () => {
     Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
     submitData.append("profileImage", profileImage);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", submitData, { headers: { "Content-Type": "multipart/form-data" } });
-      navigate("/verify-email", { state: { verificationToken: res.data.verificationToken, email: formData.G_mail } });
+      const res = await axios.post("http://localhost:5000/api/auth/register", submitData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      // Navigate to verification page with email
+      navigate("/verify-email", { 
+          state: { 
+              email: formData.G_mail 
+          }
+      });
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
     }
@@ -85,13 +102,11 @@ const RoleSelection = ({ setRole, nextStep }) => (
   </div>
 );
 
+// In the UserDetails component, remove the engineer-specific section and keep only the common fields
 const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
   <div>
     <div className="flex items-center mb-6">
-      <button 
-        onClick={handleBack}
-        className="flex items-center px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition"
-      >
+      <button onClick={handleBack} className="flex items-center px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition">
         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -100,10 +115,12 @@ const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
       <h2 className="text-xl font-semibold ml-4">Complete profile</h2>
     </div>
     <div className="space-y-4">
+      {/* Common fields for both roles */}
       <input
         type="text"
         name="F_name"
         placeholder="First Name"
+        value={formData.F_name}
         onChange={handleChange}
         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         required
@@ -112,6 +129,7 @@ const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
         type="text"
         name="L_name"
         placeholder="Last Name"
+        value={formData.L_name}
         onChange={handleChange}
         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         required
@@ -120,6 +138,7 @@ const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
         type="email"
         name="G_mail"
         placeholder="Email"
+        value={formData.G_mail}
         onChange={handleChange}
         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         required
@@ -128,6 +147,16 @@ const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
         type="text"
         name="Phonenumber"
         placeholder="Phone Number"
+        value={formData.Phonenumber}
+        onChange={handleChange}
+        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        required
+      />
+      <input
+        type="text"
+        name="location"
+        placeholder="Location (e.g., City, State)"
+        value={formData.location}
         onChange={handleChange}
         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         required
@@ -136,30 +165,12 @@ const UserDetails = ({ formData, handleChange, nextStep, handleBack }) => (
         type="password"
         name="password"
         placeholder="Password"
+        value={formData.password}
         onChange={handleChange}
         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         required
       />
-      {formData.role === "engineer" && (
-        <>
-          <input
-            type="text"
-            name="skills"
-            placeholder="Skills (comma separated)"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-          <input
-            type="text"
-            name="experience"
-            placeholder="Years of Experience"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </>
-      )}
+      
       <button
         className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         onClick={nextStep}

@@ -60,13 +60,27 @@ const MyVacancy = () => {
     }
 
     try {
+      // Map the form data to match the database schema
       const projectData = {
         title: formData.projectName,
-        landArea: formData.landArea,
+        landArea: parseFloat(formData.landArea), // Convert to number as per schema
         buildingType: formData.projectType,
-        budget: formData.budget,
+        budget: parseFloat(formData.budget), // Convert to number as per schema
         timeline: formData.timeline,
       };
+
+      // Validate all required fields match schema requirements
+      if (!projectData.title || !projectData.landArea || !projectData.buildingType || 
+          !projectData.budget || !projectData.timeline) {
+        alert('Please fill in all required project fields');
+        return;
+      }
+
+      // Validate numeric fields
+      if (isNaN(projectData.landArea) || isNaN(projectData.budget)) {
+        alert('Land area and budget must be valid numbers');
+        return;
+      }
 
       const token = localStorage.getItem('token');
       if (!token) {
@@ -77,15 +91,12 @@ const MyVacancy = () => {
       const response = await axios.post('http://localhost:5000/api/projects/create', projectData, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          // 'Access-Control-Allow-Origin': '*'
-        },
-        // withCredentials: true
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.data.success) {
         alert('Project created successfully!');
-        // Reset form
         setFormData({
           projectName: '',
           location: '',
@@ -104,20 +115,12 @@ const MyVacancy = () => {
           termsAccepted: false,
         });
         setCurrentStep(1);
-        // Optionally redirect
-        // window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error('Error creating project:', error);
-      if (error.response?.status === 401) {
-        alert('Please login again to continue');
-        // Optionally redirect to login
-        // window.location.href = '/login';
-      } else {
-        alert(error.response?.data?.message || 'Error creating project. Please try again.');
-      }
+      alert(error.response?.data?.error || 'Error creating project. Please try again.');
     }
-  };
+};
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -218,17 +221,21 @@ const MyVacancy = () => {
                   
                 </select>
   
+                
                 <label className="block text-sm font-medium text-gray-700" htmlFor="landArea">
-                landArea(In Sqft)
+                  landArea(In Sqft)
                 </label>
-                <textarea
+                <input
+                  type="number"
                   id="landArea"
                   name="landArea"
+                  min="0"
+                  step="0.01"
                   value={formData.landArea}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-md mb-4"
                   placeholder="Accurate land area details"
-                ></textarea>
+                />
   
                 <label className="block text-sm font-medium text-gray-700" htmlFor="additionalRequirements">
                   Additional Requirements
@@ -273,10 +280,11 @@ const MyVacancy = () => {
                   type="number"
                   id="budget"
                   name="budget"
+                  min="0"
                   value={formData.budget}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-md mb-4"
-                  placeholder="Enter estimated budget in NPR"
+                  placeholder="Enter estimated budget in $"
                 />
 
                 <label className="block text-sm font-medium text-gray-700" htmlFor="paymentSchedule">

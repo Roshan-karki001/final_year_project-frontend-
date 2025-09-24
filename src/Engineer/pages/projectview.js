@@ -14,6 +14,39 @@ const ProjectView = () => {
         navigate(`/engineer/view-profile/${userId}`);
     };
 
+    const handleApplyProject = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            
+            const notificationData = {
+                userId: project.userId._id,
+                message: `${user.F_name} ${user.L_name} has applied for your project "${project.title}"`,
+                type: "project and contract"
+            };
+    
+            const response = await axios.post(
+                'http://localhost:5000/api/notification/notifications',
+                notificationData,
+                {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+    
+            if (response.data.success) {
+                alert('Application sent successfully!');
+            } else {
+                throw new Error('Failed to send application');
+            }
+        } catch (error) {
+            console.error('Error applying for project:', error);
+            alert('Failed to apply for project. Please try again.');
+        }
+    };
+
     useEffect(() => {
         const fetchProject = async () => {
             try {
@@ -142,11 +175,13 @@ const ProjectView = () => {
 
             {/* Action Buttons */}
             <div className="mt-6 flex gap-4">
-                
                 <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
                     Contact Client
                 </button>
-                <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
+                <button 
+                    onClick={handleApplyProject}
+                    className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors"
+                >
                     Apply for project
                 </button>
             </div>

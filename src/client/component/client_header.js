@@ -6,7 +6,7 @@ const ClientHeader = () => {
   const user = JSON.parse(localStorage.getItem('user'));
 
   return (
-    <header className="sticky top-0 flex justify-between items-center w-full px-8 py-5 bg-white shadow-md z-10">
+    <header className="sticky top-0 flex justify-between items-center w-full px-[25px] py-[25px] bg-white shadow-md z-10">
       <h2 className="text-lg font-semibold">Hi {user?.F_name || 'User'}</h2>
       <button
         onClick={() => navigate("/client/my-vacancy")}

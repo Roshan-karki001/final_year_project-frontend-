@@ -11,7 +11,7 @@ const ProjectView = () => {
     const { id } = useParams();
 
     const handleViewProfile = (userId) => {
-        navigate(`/client/view-profile/${userId}`);
+        navigate(`/view-profile/${userId}`);
     };
 
     useEffect(() => {
@@ -146,9 +146,7 @@ const ProjectView = () => {
                 <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
                     Contact Client
                 </button>
-                <button className="flex-1 border border-purple-600 text-purple-600 py-2 px-4 rounded-md hover:bg-purple-50 transition-colors">
-                    Apply for project
-                </button>
+                
             </div>
         </div>
     );

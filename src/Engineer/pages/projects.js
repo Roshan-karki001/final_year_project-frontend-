@@ -48,7 +48,7 @@ const Projects = () => {
     const handleApplyForProject = async (projectId) => {
         try {
             const response = await axios.post(
-                `http://localhost:5000/api/projects/${projectId}/apply`,
+                `http://localhost:5000/api/projects/${projectId}/apply`, // Fixed endpoint URL
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` }

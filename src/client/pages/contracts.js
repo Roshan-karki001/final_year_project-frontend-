@@ -8,10 +8,6 @@ const Contracts = () => {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    fetchContracts();
-  }, []);
-
   const fetchContracts = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/contracts', {
@@ -25,29 +21,10 @@ const Contracts = () => {
     }
   };
 
-  const handleContractAction = async (contractId, action) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/contracts/${contractId}/${action}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      if (response.data.success) {
-        // Update the contracts list after action
-        setContracts(contracts.map(contract => 
-          contract._id === contractId 
-            ? { ...contract, status: action === 'accept' ? 'active' : 'rejected' }
-            : contract
-        ));
-      }
-    } catch (error) {
-      console.error(`Error ${action}ing contract:`, error);
-      alert(`Failed to ${action} contract. Please try again.`);
-    }
-  };
+  // Fix 1: Add fetchContracts to dependency array
+  useEffect(() => {
+    fetchContracts();
+  }, [fetchContracts]); // Added fetchContracts as dependency
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -79,6 +56,10 @@ const Contracts = () => {
                 <p className="text-gray-600">
                   Client: {contract.userId.F_name} {contract.userId.L_name}
                 </p>
+                {/* Add engineer information */}
+                <p className="text-gray-600">
+                  Engineer: {contract.engineerId?.F_name} {contract.engineerId?.L_name}
+                </p>
               </div>
               <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(contract.status)}`}>
                 {contract.status}
@@ -105,32 +86,15 @@ const Contracts = () => {
                 <span className="font-medium text-purple-600">
                   Budget: ${contract.budget.toLocaleString()}
                 </span>
-                // Update the View Contract button in the return statement
+                {/* Fix 2: Proper JSX comment format */}
                 <button
-                  onClick={() => navigate(`/client/contracts/${contract._id}`)}
+                  onClick={() => navigate(`/client/contracts/view/${contract._id}`)}
                   className="px-4 py-2 text-purple-600 border border-purple-600 rounded-md hover:bg-purple-50"
                 >
                   View Contract
                 </button>
               </div>
             </div>
-
-            {contract.status === 'pending' && (
-              <div className="flex justify-end space-x-4 mt-4 pt-4 border-t">
-                <button
-                  onClick={() => handleContractAction(contract._id, 'reject')}
-                  className="px-4 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-50"
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={() => handleContractAction(contract._id, 'accept')}
-                  className="px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700"
-                >
-                  Accept
-                </button>
-              </div>
-            )}
           </div>
         ))}
 

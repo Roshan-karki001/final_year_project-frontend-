@@ -1,8 +1,7 @@
 import { React, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-
 import ClientHeader from "../component/client_header";
-// Removed ClientNav import
+import ClientSidebar from "../component/client_sidebar"; // Add this import
 
 const ClientLayout = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const ClientLayout = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      
+      <ClientSidebar />
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 ml-64">
@@ -31,6 +30,5 @@ const ClientLayout = () => {
     </div>
   );
 };
-
 
 export default ClientLayout;

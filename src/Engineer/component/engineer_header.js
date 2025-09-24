@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Settings } from 'lucide-react';
+
 
 const EngineerHeader = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
+  
 
   return (
     <header className="sticky top-0 flex justify-between items-center w-full px-8 py-4 bg-white shadow-md z-10">
@@ -17,18 +18,6 @@ const EngineerHeader = () => {
         >
           View Projects
         </button>
-
-        <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            <Bell size={20} className="text-gray-600" />
-          </button>
-          <button 
-            onClick={() => navigate("/engineer/profile")}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <Settings size={20} className="text-gray-600" />
-          </button>
-        </div>
       </div>
     </header>
   );

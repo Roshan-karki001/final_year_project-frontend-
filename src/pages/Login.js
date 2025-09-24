@@ -27,10 +27,12 @@ const LoginPage = () => {
       // Redirect based on role
       // Update these navigation paths
       if (res.data.user.role === 'client') {
-          navigate('/client/profile');  // Changed from /client/dashboard
+          navigate('/client/dashboard');  // Changed from /client/dashboard
       } else if (res.data.user.role === 'engineer') {
-          navigate('/engineer/profile');  // Changed from /engineer/dashboard
-      }
+          navigate('/engineer/dashboard');  // Changed from /engineer/dashboard
+      }else if (res.data.user.role === 'admin') {
+        navigate('/admin/dashboard');  // Changed from /engineer/dashboard
+    }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
@@ -97,6 +99,7 @@ const LoginPage = () => {
               >
                 <option value="client">Client</option>
                 <option value="engineer">Engineer</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
   
